@@ -19,3 +19,8 @@ I don't have a Mac, mine bit the dust. I need help creating a Mac package
 of this. Please, if you want a Mac version of this application and have
 Mac packaging experience, create an issue so we can work together to figure
 out how to support Mac users best.
+
+Until such a time as support is improved, you may be able to install simply
+using this curlpipe:
+
+```curl -s https://github.com/eyedeekay/i2p-traymenu/releases/download/v0.1.04/install.sh | sh```

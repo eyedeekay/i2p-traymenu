@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
+	//	"io/ioutil"
 	"log"
 	//"strings"
 	"time"
@@ -54,8 +54,7 @@ func main() {
 	}
 
 	onExit := func() {
-		now := time.Now()
-		ioutil.WriteFile(fmt.Sprintf(`on_exit_%d.txt`, now.UnixNano()), []byte(now.String()), 0644)
+		log.Println("Exiting now.")
 	}
 
 	systray.Run(onReady, onExit)
