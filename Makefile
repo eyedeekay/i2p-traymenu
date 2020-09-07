@@ -3,7 +3,7 @@ USER_GH=eyedeekay
 VERSION=0.1.04
 packagename=i2p-traymenu
 
-GO_COMPILER_OPTS = -a -tags netgo -ldflags '-w -extldflags "-static"'
+GO_COMPILER_OPTS = -a -tags netgo -ldflags '-w'
 WIN_GO_COMPILER_OPTS = -a -tags netgo -ldflags '-H=windowsgui -w -extldflags "static"'
 
 echo:
@@ -28,7 +28,7 @@ windows: fmt
 	GOOS=windows go build $(WIN_GO_COMPILER_OPTS) -o $(packagename).exe
 
 osx: fmt
-	GOOS=darwin go build $(GO_COMPILER_OPTS) -o $(packagename)-darwin
+	#GOOS=darwin go build $(GO_COMPILER_OPTS) -o $(packagename)-darwin
 
 linux: fmt
 	GOOS=linux go build $(GO_COMPILER_OPTS) -o $(packagename)
@@ -41,7 +41,7 @@ upload-windows:
 	gothub upload -R -u eyedeekay -r "$(packagename)" -t v$(VERSION) -l "$(sumwindows)" -n "$(packagename).exe" -f "$(packagename).exe"
 
 upload-darwin:
-	gothub upload -R -u eyedeekay -r "$(packagename)" -t v$(VERSION) -l "$(sumdarwin)" -n "$(packagename)-darwin" -f "$(packagename)-darwin"
+	#gothub upload -R -u eyedeekay -r "$(packagename)" -t v$(VERSION) -l "$(sumdarwin)" -n "$(packagename)-darwin" -f "$(packagename)-darwin"
 
 upload-linux:
 	gothub upload -R -u eyedeekay -r "$(packagename)" -t v$(VERSION) -l "$(sumlinux)" -n "$(packagename)" -f "$(packagename)"
