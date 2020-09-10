@@ -3,7 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	//	"io/ioutil"
+	//"net"
+	//"io/ioutil"
 	"log"
 	//"strings"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/eyedeekay/go-i2pcontrol"
 	"github.com/eyedeekay/i2p-traymenu/icon"
 	"github.com/eyedeekay/i2pbrowser/import"
+	"github.com/eyedeekay/toopie.html/import"
 	"github.com/getlantern/systray"
 )
 
@@ -70,6 +72,7 @@ func onReady() {
 	mStartOrig := systray.AddMenuItem("Start I2P", "Start the I2P Service")
 	mStopOrig := systray.AddMenuItem("Stop I2P", "Stop the I2P Service")
 	mRestartOrig := systray.AddMenuItem("Restart I2P", "Restart the I2P Service")
+	mStatOrig := systray.AddMenuItem("I2P Router Stats", "View I2P Router Console Statistics")
 	mBrowseOrig := systray.AddMenuItem("Launch an I2P Browser", "Start an available browser, configured for I2P")
 	mQuitOrig := systray.AddMenuItem("Close Tray", "Close the tray app, but don't shutdown the router")
 	mWarnOrig := systray.AddMenuItem("I2P is Running but I2PControl is Not available.\nEnable jsonrpc on your I2P router.", "Warn the user if functionality is limited.")
@@ -92,7 +95,6 @@ func onReady() {
 		}
 	}
 	refreshStart()
-
 	go func() {
 		for {
 			go func() {
@@ -104,6 +106,12 @@ func onReady() {
 				<-mBrowseOrig.ClickedCh
 				log.Println("Launching an I2P Browser")
 				go i2pbrowser.MainNoEmbeddedStuff()
+			}()
+
+			go func() {
+				<-mStatOrig.ClickedCh
+				log.Println("Launching toopie.html")
+				go toopiexec.Run()
 			}()
 
 			go func() {
@@ -171,5 +179,4 @@ func onReady() {
 			time.Sleep(time.Minute)
 		}
 	}()
-
 }

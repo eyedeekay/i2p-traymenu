@@ -3,8 +3,8 @@ VERSION=0.1.04
 USER_GH=eyedeekay
 packagename=i2p-traymenu
 
-GO_COMPILER_OPTS = -a -tags netgo -ldflags '-w'
-WIN_GO_COMPILER_OPTS = -a -tags netgo -ldflags '-H=windowsgui -w -extldflags "static"'
+GO_COMPILER_OPTS = -a -tags "netgo" -ldflags '-w'
+WIN_GO_COMPILER_OPTS = -a -tags "netgo debian" -ldflags '-H=windowsgui -w -extldflags "static"'
 
 echo:
 	@echo "type make version to do release $(VERSION)"
