@@ -1,10 +1,10 @@
-VERSION=0.1.04
+VERSION=0.1.05
 
 USER_GH=eyedeekay
 packagename=i2p-traymenu
 
 GO_COMPILER_OPTS = -a -tags "netgo" -ldflags '-w'
-WIN_GO_COMPILER_OPTS = -a -tags "netgo debian" -ldflags '-H=windowsgui -w -extldflags "static"'
+WIN_GO_COMPILER_OPTS = -a -tags "netgo" -ldflags '-H=windowsgui -w -extldflags "static"'
 
 echo:
 	@echo "type make version to do release $(VERSION)"
@@ -34,7 +34,7 @@ windows: fmt
 
 osx: fmt
 	#GOARCH=386 GOOS=darwin go build $(GO_COMPILER_OPTS) -o $(packagename)-darwin-386
-	GOOS=darwin go build $(GO_COMPILER_OPTS) -o $(packagename)-darwin
+	#GOOS=darwin go build $(GO_COMPILER_OPTS) -o $(packagename)-darwin
 
 
 linux: fmt

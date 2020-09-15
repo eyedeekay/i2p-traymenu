@@ -14,29 +14,18 @@ if [ ! -e "$GOPATH/bin/2goarray" ]; then
     fi
 fi
 
-if [ -z "$1" ]; then
-    echo Please specify a PNG or ICO file
-    exit
-fi
+#if [ -z "$1" ]; then
+#    echo Please specify a PNG or ICO file
+#    exit
+#fi
 
-OUTPUT=iconunix.go
-CONDIT='//+build linux darwin'
-if [ $1 = "icon.ico" ]; then
-  OUTPUT=iconwin.go
-  CONDIT="//+build windows"
-fi
+for png in $(ls *.png); do
+  convert $png $(echo $png | sed 's|png|ico|')
+  echo '//+build linux darwin' > $(echo $png | sed 's|.png|png.go|')
+  echo '//+build windows' > $(echo $png | sed 's|.png|ico.go|')
+  echo '' >> $(echo $png | sed 's|.png|png.go|')
+  echo '' >> $(echo $png | sed 's|.png|ico.go|')
+  cat $png | $GOPATH/bin/2goarray $(echo $png | sed 's|.png||' | sed -e "s/\b\(.\)/\u\1/g") icon >> $(echo $png | sed 's|.png|png.go|')
+  cat $(echo $png | sed 's|png|ico|') | $GOPATH/bin/2goarray $(echo $png | sed 's|.png||' | sed -e "s/\b\(.\)/\u\1/g") icon >> $(echo $png | sed 's|.png|ico.go|')
+done
 
-if [ ! -f "$1" ]; then
-    echo $1 is not a valid file
-    exit
-fi    
-
-echo Generating $OUTPUT
-echo "$CONDIT" > $OUTPUT
-echo >> $OUTPUT
-cat "$1" | $GOPATH/bin/2goarray Data icon >> $OUTPUT
-if [ $? -ne 0 ]; then
-    echo Failure generating $OUTPUT
-    exit
-fi
-echo Finished

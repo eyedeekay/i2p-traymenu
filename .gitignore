@@ -1,3 +1,6 @@
 *.txt
-i2p-traymenu
+i2p-traymenu*
 basic
+*.i2pkeys
+*.crl
+*.pem
