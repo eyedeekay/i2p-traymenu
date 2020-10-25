@@ -113,6 +113,7 @@ func onReady() {
 	smEmail := subMenuTop.AddSubMenuItem("Mail", "Send and Recieve email")
 	smServices := subMenuTop.AddSubMenuItem("Hidden Services Mangager", "Set up and tear down tunnels")
 	smDNS := subMenuTop.AddSubMenuItem("Address Book", "Store contact addresses")
+	mIRC := subMenuTop.AddSubMenuItem("IRC Chat", "Talk to others on I2P IRC")
 	mChatOrig := systray.AddMenuItem("Distributed Chat", "(Experimental) Distributed group-chat")
 	mStatOrig := systray.AddMenuItem("I2P Router Stats", "View I2P Router Console Statistics")
 	systray.AddSeparator()
@@ -129,6 +130,7 @@ func onReady() {
 	smEmail.Hide()
 	smServices.Hide()
 	smDNS.Hide()
+	mChatOrig.Hide()
 	refreshStart := func() {
 		ok, err := checki2p.CheckI2PIsRunning()
 		if err != nil {
@@ -193,6 +195,11 @@ func onReady() {
 			go func() {
 				<-smDNS.ClickedCh
 				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", "http://127.0.0.1:7657/susidns/"})
+			}()
+
+			go func() {
+				<-mIRC.ClickedCh
+				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", "http://127.0.0.1:7669/connect"})
 			}()
 
 			go func() {
