@@ -4,7 +4,7 @@ USER_GH=eyedeekay
 packagename=i2p-traymenu
 
 GO_COMPILER_OPTS = -a -tags "netgo" -ldflags '-w'
-WIN_GO_COMPILER_OPTS = -a -tags "netgo" -ldflags '-H=windowsgui -w -extldflags "static"'
+WIN_GO_COMPILER_OPTS = -a -tags "netgo windows" -ldflags '-H=windowsgui'
 
 echo:
 	@echo "type make version to do release $(VERSION)"
@@ -30,12 +30,12 @@ tar:
 all: build windows osx linux
 
 windows: fmt
-	GOOS=windows go build $(WIN_GO_COMPILER_OPTS) -o $(packagename).exe
+	CC=x86_64-w64-mingw32-gcc-win32 CGO_ENABLED=1 GOOS=windows go build $(WIN_GO_COMPILER_OPTS) -o $(packagename).exe
+	#CC=i686-w64-mingw32-gcc-win32 CGO_ENABLED=1 GOOS=windows GOARCG=i386 go build $(WIN_GO_COMPILER_OPTS) -o $(packagename)-32.exe
 
 osx: fmt
 	#GOARCH=386 GOOS=darwin go build $(GO_COMPILER_OPTS) -o $(packagename)-darwin-386
-	#GOOS=darwin go build $(GO_COMPILER_OPTS) -o $(packagename)-darwin
-
+	GOOS=darwin go build $(GO_COMPILER_OPTS) -o $(packagename)-darwin
 
 linux: fmt
 	GOOS=linux go build $(GO_COMPILER_OPTS) -o $(packagename)
@@ -48,7 +48,7 @@ upload-windows:
 	gothub upload -R -u eyedeekay -r "$(packagename)" -t v$(VERSION) -l "$(sumwindows)" -n "$(packagename).exe" -f "$(packagename).exe"
 
 upload-darwin:
-	gothub upload -R -u eyedeekay -r "$(packagename)" -t v$(VERSION) -l "$(sumdarwin)" -n "$(packagename)-darwin" -f "$(packagename)-darwin"
+	#gothub upload -R -u eyedeekay -r "$(packagename)" -t v$(VERSION) -l "$(sumdarwin)" -n "$(packagename)-darwin" -f "$(packagename)-darwin"
 
 upload-linux:
 	gothub upload -R -u eyedeekay -r "$(packagename)" -t v$(VERSION) -l "$(sumlinux)" -n "$(packagename)" -f "$(packagename)"

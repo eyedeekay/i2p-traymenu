@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	//"strings"
+	"path/filepath"
 	"time"
 
 	"github.com/eyedeekay/checki2cp"
@@ -15,42 +16,39 @@ import (
 	"github.com/eyedeekay/di2prc/lib"
 	"github.com/eyedeekay/go-i2pcontrol"
 	"github.com/eyedeekay/i2p-traymenu/icon"
+	"github.com/eyedeekay/i2p-traymenu/irc"
 	"github.com/eyedeekay/i2pbrowser/import"
+
 	Core "github.com/eyedeekay/opentracker"
 	"github.com/eyedeekay/sam3/i2pkeys"
 	"github.com/eyedeekay/toopie.html/import"
 	"github.com/getlantern/systray"
 	"github.com/vvampirius/retracker/core/common"
-	//"github.com/webview/webview"
 )
 
 var usage = `i2p-traymenu
 ===========
 
 Tray interface to monitor and manage I2P router service. Basically, a
-tray i2pcontrol client.
-
-        -host default:"127.0.0.1"
-        -port default:"7657"
-        -path default:"jsonrpc"
-        -password default:"itoopie"
-
-Installation with go get
-
-        go get -u github.com/eyedeekay/i2p-traymenu
+tray i2pcontrol client. Also has an embedded IRC client.
 
 `
 
 //        -block default:false
 
+var home, _ = os.UserHomeDir()
+
 var (
 	host     = flag.String("host", "localhost", "Host of the i2pcontrol and SAM interfaces")
 	port     = flag.String("port", "7657", "Port of the i2pcontrol interface")
+	dir      = flag.String("dir", filepath.Join(home, "i2p/opt/native-traymenu"), "Path to the configuration directory")
 	path     = flag.String("path", "jsonrpc", "Path to the i2pcontrol interface")
 	password = flag.String("password", "itoopie", "Password for the i2pcontrol interface")
 	shelp    = flag.Bool("h", false, "Show the help message")
 	lhelp    = flag.Bool("help", false, "Show the help message")
 	debug    = flag.Bool("d", false, "Debug mode")
+	ot       = flag.Bool("tracker", false, "Run an open torrent tracker")
+	chat     = flag.Bool("irc", true, "Run an IRC client connected to I2P")
 	age      = flag.Float64("a", 1800, "Keep 'n' minutes peer in memory")
 	sam      = flag.String("sam", "7656", "Port of the SAMv3 interface, host must match i2pcontrol")
 
@@ -63,9 +61,15 @@ func main() {
 	flag.Parse()
 	if *shelp || *lhelp {
 		fmt.Printf(usage)
+		flag.PrintDefaults()
 		return
 	}
-	go tracker()
+	if *chat {
+		go trayirc.IRC(*dir)
+	}
+	if *ot {
+		go tracker()
+	}
 	di2prcln = di2prc.Listen(*host+":"+*sam, "", "")
 	onExit := func() {
 		defer di2prcln.Close()
@@ -168,27 +172,27 @@ func onReady() {
 
 			go func() {
 				<-smConsole.ClickedCh
-				go i2pbrowser.MainNoEmbeddedStuff([]string{"http://127.0.0.1:7657/console"})
+				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", "http://127.0.0.1:7657/console"})
 			}()
 
 			go func() {
 				<-smTorrent.ClickedCh
-				go i2pbrowser.MainNoEmbeddedStuff([]string{"http://127.0.0.1:7657/i2psnark/"})
+				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", "http://127.0.0.1:7657/i2psnark/"})
 			}()
 
 			go func() {
 				<-smEmail.ClickedCh
-				go i2pbrowser.MainNoEmbeddedStuff([]string{"http://127.0.0.1:7657/susimail/"})
+				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", "http://127.0.0.1:7657/susimail/"})
 			}()
 
 			go func() {
 				<-smServices.ClickedCh
-				go i2pbrowser.MainNoEmbeddedStuff([]string{"http://127.0.0.1:7657/i2ptunnel/"})
+				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", "http://127.0.0.1:7657/i2ptunnel/"})
 			}()
 
 			go func() {
 				<-smDNS.ClickedCh
-				go i2pbrowser.MainNoEmbeddedStuff([]string{"http://127.0.0.1:7657/susidns/"})
+				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", "http://127.0.0.1:7657/susidns/"})
 			}()
 
 			go func() {
@@ -206,7 +210,7 @@ func onReady() {
 			go func() {
 				<-mChatOrig.ClickedCh
 				log.Println("Launching di2prc")
-				go i2pbrowser.MainNoEmbeddedStuff([]string{"http://" + di2prcln.Addr().(i2pkeys.I2PAddr).Base32()})
+				go i2pbrowser.MainNoEmbeddedStuff([]string{"about:blank", "http://" + di2prcln.Addr().(i2pkeys.I2PAddr).Base32()})
 			}()
 
 			go func() {
