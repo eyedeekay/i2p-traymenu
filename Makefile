@@ -58,7 +58,7 @@ upload: upload-windows upload-darwin upload-linux
 release: version upload
 
 fmt:
-	gofmt -w -s main.go
+	gofmt -w -s main.go irc/*.go
 
 curlpipe:
 	@echo '#! /usr/bin/env sh' | tee install.sh

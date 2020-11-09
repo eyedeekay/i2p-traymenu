@@ -8,6 +8,7 @@ replace github.com/zserge/lorca => github.com/eyedeekay/lorca v0.1.9-0.202004032
 
 require (
 	github.com/RoaringBitmap/roaring v0.5.3 // indirect
+	github.com/alexcesaro/log v0.0.0-20150915221235-61e686294e58
 	github.com/blevesearch/bleve v1.0.12 // indirect
 	github.com/caddyserver/certmagic v0.12.0 // indirect
 	github.com/eyedeekay/checki2cp v0.0.17
@@ -21,6 +22,7 @@ require (
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/google/go-cmp v0.5.1 // indirect
+	github.com/jessevdk/go-flags v1.4.0 // indirect
 	github.com/khlieng/dispatch v0.6.5-0.20200916230630-a52ddf303358
 	github.com/magiconair/properties v1.8.4 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
@@ -28,6 +30,8 @@ require (
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/pelletier/go-toml v1.8.1 // indirect
 	github.com/philhofer/fwd v1.1.0 // indirect
+	github.com/shazow/go-irckit v0.0.0-20151024185933-f29f5d64b0fb
+	github.com/sorcix/irc v1.1.4 // indirect
 	github.com/spf13/afero v1.4.1 // indirect
 	github.com/spf13/cobra v1.1.1 // indirect
 	github.com/spf13/viper v1.7.1 // indirect

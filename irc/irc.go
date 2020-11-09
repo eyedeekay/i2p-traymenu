@@ -1,22 +1,22 @@
 package trayirc
 
 import (
-//	"fmt"
+	//	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
-//	"strings"
-//	"runtime"
+	//	"strings"
+	//	"runtime"
 
-//"github.com/khlieng/dispatch/assets"
+	//"github.com/khlieng/dispatch/assets"
 	"github.com/khlieng/dispatch/config"
 	"github.com/khlieng/dispatch/server"
 	"github.com/khlieng/dispatch/storage"
 	"github.com/khlieng/dispatch/storage/bleve"
 	"github.com/khlieng/dispatch/storage/boltdb"
-//	"github.com/khlieng/dispatch/version"
-//	"github.com/spf13/cobra"
-//	"github.com/spf13/viper"
+	//	"github.com/khlieng/dispatch/version"
+	//	"github.com/spf13/cobra"
+	//	"github.com/spf13/viper"
 )
 
 var configfile = `# IP address to listen on, leave empty to listen on anything
@@ -127,49 +127,49 @@ func initConfig(configPath string, overwrite bool) error {
 	if _, err := os.Stat(configPath); overwrite || os.IsNotExist(err) {
 		log.Println("Writing default config to", configPath)
 		err := ioutil.WriteFile(configPath, []byte(configfile), 0600)
-	  if err != nil {
-	    return err
-	  }
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func IRC(confdir string) {
-    storage.Initialize(confdir, confdir, confdir)
+	storage.Initialize(confdir, confdir, confdir)
 
-		err := initConfig(storage.Path.Config(), false)
-		if err != nil {
-			log.Fatal(err)
+	err := initConfig(storage.Path.Config(), false)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("Storing data at", storage.Path.DataRoot())
+
+	db, err := boltdb.New(storage.Path.Database())
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	storage.GetMessageStore = func(user *storage.User) (storage.MessageStore, error) {
+		return boltdb.New(storage.Path.Log(user.Username))
+	}
+
+	storage.GetMessageSearchProvider = func(user *storage.User) (storage.MessageSearchProvider, error) {
+		return bleve.New(storage.Path.Index(user.Username))
+	}
+
+	cfg, cfgUpdated := config.LoadConfig()
+	dispatch := server.New(cfg)
+
+	go func() {
+		for {
+			dispatch.SetConfig(<-cfgUpdated)
+			log.Println("New config loaded")
 		}
+	}()
 
-		log.Println("Storing data at", storage.Path.DataRoot())
+	dispatch.Store = db
+	dispatch.SessionStore = db
 
-		db, err := boltdb.New(storage.Path.Database())
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer db.Close()
-
-		storage.GetMessageStore = func(user *storage.User) (storage.MessageStore, error) {
-			return boltdb.New(storage.Path.Log(user.Username))
-		}
-
-		storage.GetMessageSearchProvider = func(user *storage.User) (storage.MessageSearchProvider, error) {
-			return bleve.New(storage.Path.Index(user.Username))
-		}
-
-		cfg, cfgUpdated := config.LoadConfig()
-		dispatch := server.New(cfg)
-
-		go func() {
-			for {
-				dispatch.SetConfig(<-cfgUpdated)
-				log.Println("New config loaded")
-			}
-		}()
-
-		dispatch.Store = db
-		dispatch.SessionStore = db
-
-		dispatch.Run()
+	dispatch.Run()
 }

@@ -66,6 +66,7 @@ func main() {
 	}
 	if *chat {
 		go trayirc.IRC(*dir)
+		go trayirc.IRCServerMain(*dir)
 	}
 	if *ot {
 		go tracker()
