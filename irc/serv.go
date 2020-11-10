@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/mmcloughlin/professor"
 	"github.com/prologic/eris/irc"
@@ -45,7 +46,29 @@ func GenerateEncodedPassword(passwd []byte) (encoded string, err error) {
 	return
 }
 
+func OutputAutoLink(dir, configfile string) string {
+	f, err := ioutil.ReadFile(filepath.Join(dir, configfile))
+	if err != nil {
+		return ""
+	}
+	b321 := strings.Split(string(f), "base32: ")
+	if len(b321) <= 0 {
+		return ""
+	}
+	b322 := strings.Split(b321[1], "\n")
+	if len(b321) <= 0 {
+		return ""
+	}
+	cleaned := strings.Trim(b322[0], " ")
+	return "http://localhost:7669/connect?host=" + cleaned + "?name=invisibleirc"
+}
+
 func OutputServerConfigFile(dir, configfile string) (string, error) {
+	if _, err := os.Stat(filepath.Join(dir, configfile)); err == nil {
+		return "", err
+	} else if !os.IsNotExist(err) {
+		return "", err
+	}
 	operatorpassword, err := password.Generate(14, 2, 2, false, false)
 	if err != nil {
 		return "", err
@@ -63,16 +86,15 @@ func OutputServerConfigFile(dir, configfile string) (string, error) {
 		return "", err
 	}
 
-	var serverconfigfile string = `mutex: {}
+	var serverconfigfile string = `
+  mutex: {}
   network:
-    name: Local
+    name: InvisibleIRC
   server:
     password: ""
-    listen: []
-    tlslisten: {}
     i2plisten:
       invisibleirc:
-        i2pkeys: ` + filepath.Join(dir, "iirc.i2pkeys") + `
+        i2pkeys: "` + filepath.Join(dir, "iirc.i2pkeys") + `"
         samaddr: 127.0.0.1:7656
     #torlisten:
       #hiddenirc:
@@ -87,7 +109,8 @@ func OutputServerConfigFile(dir, configfile string) (string, error) {
       password: ` + operator + `
   account:
     admin:
-      password: ` + account
+      password: ` + account + `
+`
 
 	err = ioutil.WriteFile(filepath.Join(dir, configfile), []byte(serverconfigfile), 0644)
 	if err != nil {
@@ -119,10 +142,30 @@ func IRCServerMain(version, debug bool, dir, configfile string) {
 		go professor.Launch(":6060")
 	}
 
+	if _, err := os.Stat(filepath.Join(dir, "ircd.running")); !os.IsNotExist(err) {
+		return
+	}
+	err := ioutil.WriteFile(filepath.Join(dir, "ircd.running"), []byte(motd), 0644)
+	if err != nil {
+		log.Fatal("Error outputting runfile, %s", err)
+	}
+
+	_, err = OutputServerConfigFile(dir, configfile)
+	if err != nil {
+		log.Fatal("Config file generation error, %s", err)
+	}
+
 	config, err := irc.LoadConfig(filepath.Join(dir, configfile))
 	if err != nil {
 		log.Fatal("IRC Server Config file did not load successfully:", err.Error())
 	}
 
 	irc.NewServer(config).Run()
+}
+
+func Close(dir, configfile string) {
+	err := os.Remove(filepath.Join(dir, "ircd.running"))
+	if err != nil {
+		log.Fatal("Error removing runfile, %s", err)
+	}
 }

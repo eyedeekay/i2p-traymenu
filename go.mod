@@ -7,9 +7,7 @@ replace github.com/zserge/lorca => github.com/eyedeekay/lorca v0.1.9-0.202004032
 // replace github.com/eyedeekay/di2prc => ../di2prc
 
 require (
-	github.com/DanielOaks/girc-go v0.0.0-20180430075055-8d136c4f9287 // indirect
 	github.com/RoaringBitmap/roaring v0.5.5 // indirect
-	github.com/alexcesaro/log v0.0.0-20150915221235-61e686294e58 // indirect
 	github.com/blevesearch/bleve v1.0.12 // indirect
 	github.com/caddyserver/certmagic v0.12.0 // indirect
 	github.com/eyedeekay/checki2cp v0.0.17
@@ -23,9 +21,6 @@ require (
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/google/go-cmp v0.5.1 // indirect
-	github.com/goshuirc/e-nfa v0.0.0-20160917075329-7071788e3940 // indirect
-	github.com/imdario/mergo v0.3.11 // indirect
-	github.com/jessevdk/go-flags v1.4.0 // indirect
 	github.com/khlieng/dispatch v0.6.5-0.20200916230630-a52ddf303358
 	github.com/klauspost/cpuid v1.3.1 // indirect
 	github.com/magiconair/properties v1.8.4 // indirect
@@ -37,10 +32,7 @@ require (
 	github.com/philhofer/fwd v1.1.0 // indirect
 	github.com/prologic/eris v1.6.6
 	github.com/sethvargo/go-password v0.2.0
-	github.com/shazow/go-irckit v0.0.0-20151024185933-f29f5d64b0fb // indirect
-	github.com/sorcix/irc v1.1.4 // indirect
 	github.com/spf13/afero v1.4.1 // indirect
-	github.com/spf13/cobra v1.1.1 // indirect
 	github.com/spf13/viper v1.7.1 // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/tdewolff/minify/v2 v2.9.10 // indirect
@@ -52,12 +44,12 @@ require (
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
 	golang.org/x/net v0.0.0-20201109172640-a11eb1b685be // indirect
 	golang.org/x/sys v0.0.0-20201109165425-215b40eba54c // indirect
-	golang.org/x/text v0.3.4 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
-	gopkg.in/yaml.v2 v2.3.0 // indirect
 	honnef.co/go/tools v0.0.1-2020.1.4 // indirect
 )
 
 replace github.com/vvampirius/retracker v0.0.0-20171226134001-fdbec17ad537 => github.com/eyedeekay/retracker v0.0.0-20191208024817-1068d9dccb6d
+
+replace github.com/prologic/eris v1.6.6 => github.com/eyedeekay/eris v1.6.7-0.20201110004450-ebfb181a5b89

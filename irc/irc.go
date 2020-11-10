@@ -38,7 +38,9 @@ name = "i2prc"
 host = "irc.echelon.i2p"
 port = 6697
 channels = [
-  "#i2p"
+  "#i2p",
+  "#i2p-dev",
+  "#i2p-android-dev"
 ]
 server_password = ""
 ssl = false
