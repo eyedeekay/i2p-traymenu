@@ -1,22 +1,16 @@
 package trayirc
 
 import (
-	//	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
-	//	"strings"
-	//	"runtime"
+	"path/filepath"
 
-	//"github.com/khlieng/dispatch/assets"
 	"github.com/khlieng/dispatch/config"
 	"github.com/khlieng/dispatch/server"
 	"github.com/khlieng/dispatch/storage"
 	"github.com/khlieng/dispatch/storage/bleve"
 	"github.com/khlieng/dispatch/storage/boltdb"
-	//	"github.com/khlieng/dispatch/version"
-	//	"github.com/spf13/cobra"
-	//	"github.com/spf13/viper"
 )
 
 var configfile = `# IP address to listen on, leave empty to listen on anything
@@ -137,9 +131,18 @@ func initConfig(configPath string, overwrite bool) error {
 }
 
 func IRC(confdir string) {
+
+	if _, err := os.Stat(filepath.Join(confdir, "irc.running")); !os.IsNotExist(err) {
+		return
+	}
+	err := ioutil.WriteFile(filepath.Join(confdir, "irc.running"), []byte(motd), 0644)
+	if err != nil {
+		log.Fatal("Error outputting runfile, %s", err)
+	}
+
 	storage.Initialize(confdir, confdir, confdir)
 
-	err := initConfig(storage.Path.Config(), false)
+	err = initConfig(storage.Path.Config(), false)
 	if err != nil {
 		log.Fatal(err)
 	}

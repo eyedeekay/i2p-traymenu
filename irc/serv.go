@@ -47,7 +47,7 @@ func GenerateEncodedPassword(passwd []byte) (encoded string, err error) {
 }
 
 func OutputAutoLink(dir, configfile string) string {
-	f, err := ioutil.ReadFile(filepath.Join(dir, configfile))
+	f, err := ioutil.ReadFile(filepath.Join(dir, configfile+".i2p.public.txt"))
 	if err != nil {
 		return ""
 	}
@@ -94,11 +94,11 @@ func OutputServerConfigFile(dir, configfile string) (string, error) {
     password: ""
     i2plisten:
       invisibleirc:
-        i2pkeys: "` + filepath.Join(dir, "iirc.i2pkeys") + `"
+        i2pkeys: "` + filepath.Join(dir, "iirc") + `"
         samaddr: 127.0.0.1:7656
     #torlisten:
       #hiddenirc:
-        #torkeys: ` + filepath.Join(dir, "tirc.torkeys") + `
+        #torkeys: ` + filepath.Join(dir, "tirc") + `
         #controlport: 0
     log: ""
     motd: ` + filepath.Join(dir, "ircd.motd") + `
@@ -166,6 +166,10 @@ func IRCServerMain(version, debug bool, dir, configfile string) {
 func Close(dir, configfile string) {
 	err := os.Remove(filepath.Join(dir, "ircd.running"))
 	if err != nil {
-		log.Fatal("Error removing runfile, %s", err)
+		log.Printf("Error removing runfile, %s", err)
+	}
+	err = os.Remove(filepath.Join(dir, "irc.running"))
+	if err != nil {
+		log.Printf("Error removing runfile, %s", err)
 	}
 }

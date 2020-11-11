@@ -207,7 +207,7 @@ func onReady() {
 
 			go func() {
 				<-mSelfIRC.ClickedCh
-				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", trayirc.OutputAutoLink(*dir, "ircd.yml")})
+				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", trayirc.OutputAutoLink(*dir, "iirc")})
 			}()
 
 			go func() {
