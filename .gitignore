@@ -4,3 +4,9 @@ basic
 *.i2pkeys
 *.crl
 *.pem
+data-dir-*
+di2prc
+nohup.out
+*.crt
+toopie
+vendor/
