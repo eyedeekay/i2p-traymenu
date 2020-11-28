@@ -66,7 +66,8 @@ func main() {
 	}
 	if *chat {
 		go trayirc.IRC(*dir)
-		go trayirc.IRCServerMain(*dir)
+		go trayirc.IRCServerMain(false, *debug, *dir, "ircd.yml")
+		defer trayirc.Close(*dir, "ircd.yml")
 	}
 	if *ot {
 		go tracker()
@@ -115,6 +116,7 @@ func onReady() {
 	smServices := subMenuTop.AddSubMenuItem("Hidden Services Mangager", "Set up and tear down tunnels")
 	smDNS := subMenuTop.AddSubMenuItem("Address Book", "Store contact addresses")
 	mIRC := subMenuTop.AddSubMenuItem("IRC Chat", "Talk to others on I2P IRC")
+	mSelfIRC := subMenuTop.AddSubMenuItem("Group Chat", "Connect to private IRC server")
 	mChatOrig := systray.AddMenuItem("Distributed Chat", "(Experimental) Distributed group-chat")
 	mStatOrig := systray.AddMenuItem("I2P Router Stats", "View I2P Router Console Statistics")
 	systray.AddSeparator()
@@ -201,6 +203,11 @@ func onReady() {
 			go func() {
 				<-mIRC.ClickedCh
 				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", "http://127.0.0.1:7669/connect"})
+			}()
+
+			go func() {
+				<-mSelfIRC.ClickedCh
+				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", trayirc.OutputAutoLink(*dir, "iirc")})
 			}()
 
 			go func() {

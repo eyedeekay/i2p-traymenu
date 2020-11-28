@@ -1,129 +1,175 @@
 package trayirc
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"net"
-	"path/filepath"
-	//	"net/http"
+	"log"
 	"os"
-	"os/signal"
+	"path/filepath"
+	"strings"
 
-	"github.com/alexcesaro/log"
-	"github.com/alexcesaro/log/golog"
-	//	"github.com/jessevdk/go-flags"
-
-	. "github.com/eyedeekay/sam3"
-	"github.com/shazow/go-irckit"
+	"github.com/mmcloughlin/professor"
+	"github.com/prologic/eris/irc"
+	"github.com/sethvargo/go-password/password"
+	"golang.org/x/crypto/bcrypt"
 )
 
-//import _ "net/http/pprof"
+var motd string = `
+.___               .__         .__ ___.    .__           .___ __________ _________
+|   |  ____ ___  __|__|  ______|__|\_ |__  |  |    ____  |   |\______   \\_   ___ \
+|   | /    \\  \/ /|  | /  ___/|  | | __ \ |  |  _/ __ \ |   | |       _//    \  \/
+|   ||   |  \\   / |  | \___ \ |  | | \_\ \|  |__\  ___/ |   | |    |   \\     \____
+|___||___|  / \_/  |__|/____  >|__| |___  /|____/ \___  >|___| |____|_  / \______  /
+          \/                \/          \/            \/              \/         \/
 
-// version gets replaced during build
-var version string = "dev"
+        ___                                                 _____ __         __ 
+       / _ |  ___  ___   ___  __ __ __ _  ___  __ __ ___   / ___// /  ___ _ / /_
+      / __ | / _ \/ _ \ / _ \/ // //  ' \/ _ \/ // /(_-<  / /__ / _ \/ _ '// __/
+     /_/ |_|/_//_/\___//_//_/\_, //_/_/_/\___/\_,_//___/  \___//_//_/\_,_/ \__/
+     ==========================================================================     
 
-// logger gets replaced by golog
-var logger log.Logger = log.NullLogger
+`
 
-// Options contains the flag options
-type Options struct {
-	//Bind    string `long:"bind" description:"Bind address to listen on." value-name:"[HOST]:PORT" default:":6667"`
-	//Pprof   string `long:"pprof" description:"Bind address to serve pprof for profiling." value-name:"[HOST]:PORT"`
-	Name    string `long:"name" description:"Server name." default:"irckit-demo"`
-	Motd    string `long:"motd" description:"Message of the day."`
-	Verbose []bool `short:"v" long:"verbose" description:"Show verbose logging."`
-	Version bool   `long:"version"`
+// GenerateEncodedPassword generated a bcrypt hashed passwords
+// Taken from github.com/prologic/mkpasswd
+func GenerateEncodedPassword(passwd []byte) (encoded string, err error) {
+	if passwd == nil {
+		err = fmt.Errorf("empty password")
+		return
+	}
+	bcrypted, err := bcrypt.GenerateFromPassword(passwd, bcrypt.MinCost)
+	if err != nil {
+		return
+	}
+	encoded = base64.StdEncoding.EncodeToString(bcrypted)
+	return
 }
 
-var logLevels = []log.Level{
-	log.Warning,
-	log.Info,
-	log.Debug,
+func OutputAutoLink(dir, configfile string) string {
+	f, err := ioutil.ReadFile(filepath.Join(dir, configfile+".i2p.public.txt"))
+	if err != nil {
+		return ""
+	}
+	b321 := strings.Split(string(f), "base32: ")
+	if len(b321) <= 0 {
+		return ""
+	}
+	b322 := strings.Split(b321[1], "\n")
+	if len(b321) <= 0 {
+		return ""
+	}
+	cleaned := strings.Trim(b322[0], " ")
+	return "http://localhost:7669/connect?host=" + cleaned + "?name=invisibleirc"
 }
 
-func fail(code int, format string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, format, args...)
-	os.Exit(code)
-}
-
-func IRCServerMain(dir string) {
-	options := Options{
-		Name:    "indieirc",
-		Motd:    "Welcome to the group chat",
-		Verbose: []bool{false},
-		Version: false,
+func OutputServerConfigFile(dir, configfile string) (string, error) {
+	if _, err := os.Stat(filepath.Join(dir, configfile)); err == nil {
+		return "", err
+	} else if !os.IsNotExist(err) {
+		return "", err
+	}
+	operatorpassword, err := password.Generate(14, 2, 2, false, false)
+	if err != nil {
+		return "", err
+	}
+	operator, err := GenerateEncodedPassword([]byte(operatorpassword))
+	if err != nil {
+		return "", err
+	}
+	accountpassword, err := password.Generate(14, 2, 2, false, false)
+	if err != nil {
+		return "", err
+	}
+	account, err := GenerateEncodedPassword([]byte(accountpassword))
+	if err != nil {
+		return "", err
 	}
 
-	if options.Version {
-		fmt.Println(version)
+	var serverconfigfile string = `
+  mutex: {}
+  network:
+    name: InvisibleIRC
+  server:
+    password: ""
+    i2plisten:
+      invisibleirc:
+        i2pkeys: "` + filepath.Join(dir, "iirc") + `"
+        samaddr: 127.0.0.1:7656
+    #torlisten:
+      #hiddenirc:
+        #torkeys: ` + filepath.Join(dir, "tirc") + `
+        #controlport: 0
+    log: ""
+    motd: ` + filepath.Join(dir, "ircd.motd") + `
+    name: myinvisibleirc.i2p
+    description: Hidden IRC Services
+  operator:
+    admin:
+      password: ` + operator + `
+  account:
+    admin:
+      password: ` + account + `
+`
+
+	err = ioutil.WriteFile(filepath.Join(dir, configfile), []byte(serverconfigfile), 0644)
+	if err != nil {
+		return "", err
+	}
+	err = ioutil.WriteFile(filepath.Join(dir, "operator-admin-passwd.txt"), []byte(operatorpassword), 0644)
+	if err != nil {
+		return "", err
+	}
+	err = ioutil.WriteFile(filepath.Join(dir, "account-admin-passwd.txt"), []byte(accountpassword), 0644)
+	if err != nil {
+		return "", err
+	}
+	err = ioutil.WriteFile(filepath.Join(dir, "ircd.motd"), []byte(motd), 0644)
+	if err != nil {
+		return "", err
+	}
+	return serverconfigfile, nil
+}
+
+func IRCServerMain(version, debug bool, dir, configfile string) {
+
+	if version {
+		fmt.Printf(irc.FullVersion())
 		os.Exit(0)
 	}
 
-	/*if options.Pprof != "" {
-		go func() {
-			fmt.Println(http.ListenAndServe(options.Pprof, nil))
-		}()
-	}*/
-
-	// Figure out the log level
-	numVerbose := len(options.Verbose)
-	if numVerbose > len(logLevels) {
-		numVerbose = len(logLevels) - 1
+	if debug {
+		go professor.Launch(":6060")
 	}
 
-	logLevel := logLevels[numVerbose]
-	logger = golog.New(os.Stderr, logLevel)
-	irckit.SetLogger(logger)
-
-	//	socket, err := net.Listen("tcp", options.Bind)
-	sam, _ := NewSAM("127.0.0.1:7656")
-	keys, _ := sam.NewKeys()
-	ioutil.WriteFile(filepath.Join(dir, "ircb32.i2p.txt"), []byte(keys.Addr().Base32()), 0644)
-	stream, _ := sam.NewStreamSession("serverTun", keys, Options_Medium)
-	socket, err := stream.Listen()
+	if _, err := os.Stat(filepath.Join(dir, "ircd.running")); !os.IsNotExist(err) {
+		return
+	}
+	err := ioutil.WriteFile(filepath.Join(dir, "ircd.running"), []byte(motd), 0644)
 	if err != nil {
-		fail(4, "Failed to listen on socket: %v\n", err)
+		log.Fatal("Error outputting runfile, %s", err)
 	}
-	defer socket.Close()
 
-	motd := []string{}
-	if options.Motd != "" {
-		motd = append(motd, options.Motd)
+	_, err = OutputServerConfigFile(dir, configfile)
+	if err != nil {
+		log.Fatal("Config file generation error, %s", err)
 	}
-	srv := irckit.ServerConfig{
-		Name: options.Name,
-		Motd: motd,
-	}.Server()
-	go start(srv, socket)
 
-	fmt.Printf("Listening for connections on %v\n", socket.Addr().String())
+	config, err := irc.LoadConfig(filepath.Join(dir, configfile))
+	if err != nil {
+		log.Fatal("IRC Server Config file did not load successfully:", err.Error())
+	}
 
-	// Construct interrupt handler
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt)
-
-	<-sig // Wait for ^C signal
-	fmt.Fprintln(os.Stderr, "Interrupt signal detected, shutting down.")
-	srv.Close()
-	os.Exit(0)
+	irc.NewServer(config).Run()
 }
 
-func start(srv irckit.Server, socket net.Listener) {
-	for {
-		conn, err := socket.Accept()
-		if err != nil {
-			logger.Errorf("Failed to accept connection: %v", err)
-			return
-		}
-
-		// Goroutineify to resume accepting sockets early
-		go func() {
-			logger.Infof("New connection: %s", conn.RemoteAddr())
-			err = srv.Connect(irckit.NewUserNet(conn))
-			if err != nil {
-				logger.Errorf("Failed to join: %v", err)
-				return
-			}
-		}()
+func Close(dir, configfile string) {
+	err := os.Remove(filepath.Join(dir, "ircd.running"))
+	if err != nil {
+		log.Printf("Error removing runfile, %s", err)
+	}
+	err = os.Remove(filepath.Join(dir, "irc.running"))
+	if err != nil {
+		log.Printf("Error removing runfile, %s", err)
 	}
 }
