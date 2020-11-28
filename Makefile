@@ -27,7 +27,7 @@ tar:
 		--exclude examples \
 		-cJvf ../$(packagename)_$(VERSION).orig.tar.xz .
 
-all: build windows osx linux
+all: windows osx linux
 
 windows: fmt
 	CC=x86_64-w64-mingw32-gcc-win32 CGO_ENABLED=1 GOOS=windows go build $(WIN_GO_COMPILER_OPTS) -o $(packagename).exe
