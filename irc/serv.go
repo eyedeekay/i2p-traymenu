@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/mmcloughlin/professor"
-	"github.com/prologic/eris/irc"
+	"git.mills.io/prologic/eris/irc"
 	"github.com/sethvargo/go-password/password"
 	"golang.org/x/crypto/bcrypt"
 )
