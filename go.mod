@@ -61,7 +61,7 @@ require (
 	github.com/pelletier/go-toml v1.8.1 // indirect
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/pierrec/lz4/v4 v4.1.1 // indirect
-	github.com/prologic/eris v1.6.6
+	git.mills.io/prologic/eris v1.6.6
 	github.com/prometheus/client_golang v1.8.0 // indirect
 	github.com/prometheus/common v0.15.0 // indirect
 	github.com/satori/go.uuid v1.2.0 // indirect

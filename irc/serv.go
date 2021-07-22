@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/mmcloughlin/professor"
-	"github.com/prologic/eris/irc"
+	"git.mills.io/prologic/eris/irc"
 	"github.com/sethvargo/go-password/password"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -32,7 +32,7 @@ var motd string = `
 `
 
 // GenerateEncodedPassword generated a bcrypt hashed passwords
-// Taken from github.com/prologic/mkpasswd
+// Taken from git.mills.io/prologic/mkpasswd
 func GenerateEncodedPassword(passwd []byte) (encoded string, err error) {
 	if passwd == nil {
 		err = fmt.Errorf("empty password")
