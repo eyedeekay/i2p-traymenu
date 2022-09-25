@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	//"io/ioutil"
@@ -36,14 +38,44 @@ tray i2pcontrol client. Also has an embedded IRC client.
 //        -block default:false
 
 var (
-	host     = flag.String("host", "localhost", "Host of the i2pcontrol and SAM interfaces")
-	port     = flag.String("port", "7657", "Port of the i2pcontrol interface")
-	dir      = flag.String("dir", defaultDir(), "Path to the configuration directory")
-	path     = flag.String("path", "jsonrpc", "Path to the i2pcontrol interface")
-	password = flag.String("password", "itoopie", "Password for the i2pcontrol interface")
-	shelp    = flag.Bool("h", false, "Show the help message")
-	lhelp    = flag.Bool("help", false, "Show the help message")
+	host       = flag.String("host", "127.0.0.1", "Host of the i2pcontrol and SAM interfaces")
+	port       = flag.String("port", consoleURLPort(), "Port of the i2pcontrol interface")
+	dir        = flag.String("dir", defaultDir(), "Path to the configuration directory")
+	path       = flag.String("path", "jsonrpc", "Path to the i2pcontrol interface")
+	password   = flag.String("password", "itoopie", "Password for the i2pcontrol interface")
+	routerconf = flag.String("client", routerConfig(), "path to the client.config file for the router console")
+	shelp      = flag.Bool("h", false, "Show the help message")
+	lhelp      = flag.Bool("help", false, "Show the help message")
 )
+
+var usability bool
+
+func routerConfig() string {
+	switch runtime.GOOS {
+	case "windows":
+		dir := filepath.Join(os.Getenv("LOCALAPPDATA"), "i2p")
+		conf := filepath.Join(dir, "clients.config.d", "00-net.i2p.router.web.RouterConsoleRunner-clients.config")
+		if _, err := os.Stat(conf); err == nil {
+			return conf
+		}
+	case "linux":
+		userHomeDir, err := os.UserHomeDir()
+		if err != nil {
+			panic(err)
+		}
+		dir := filepath.Join(userHomeDir, ".i2p")
+		conf := filepath.Join(dir, "clients.config.d", "00-net.i2p.router.web.RouterConsoleRunner-clients.config")
+		if _, err := os.Stat(conf); err == nil {
+			return conf
+		}
+		dir = filepath.Join(userHomeDir, "i2p")
+		conf = filepath.Join(dir, "clients.config.d", "00-net.i2p.router.web.RouterConsoleRunner-clients.config")
+		if _, err := os.Stat(conf); err == nil {
+			return conf
+		}
+	}
+	return ""
+}
 
 func defaultDir() string {
 	exe, err := os.Executable()
@@ -74,10 +106,20 @@ func profileDir() string {
 }
 
 func browse(url string) {
-	profilePath, err := goi2pbrowser.UnpackBase(profileDir())
-	if err != nil {
-		log.Println(err)
-		return
+	var profilePath string
+	var err error
+	if usability {
+		profilePath, err = goi2pbrowser.UnpackUsability(profileDir())
+		if err != nil {
+			log.Println(err)
+			return
+		}
+	} else {
+		profilePath, err = goi2pbrowser.UnpackBase(profileDir())
+		if err != nil {
+			log.Println(err)
+			return
+		}
 	}
 	FIREFOX, ERROR := fcw.BasicFirefox(profilePath, false, url)
 	if ERROR != nil {
@@ -102,6 +144,39 @@ func main() {
 	systray.Run(onReady, onExit)
 }
 
+func usabilityMode() string {
+	if !usability {
+		return "Switch Browser to Usability Mode"
+	}
+	return "Switch Browser to Strict Mode"
+}
+
+func consoleURLPort() string {
+	if *routerconf == "" {
+		return "7657"
+	}
+	//clientApp.0.args=7657
+	contents, err := ioutil.ReadFile(*routerconf)
+	if err != nil {
+		log.Println("failed to read client config", err)
+		return "7657"
+	}
+	lines := strings.Split(string(contents), "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "clientApp.0.args=") {
+			trimmedline := strings.Replace(line, "clientApp.0.args=", "", 1)
+			final := strings.Split(trimmedline, " ")[0]
+			return final
+		}
+	}
+	return "7657"
+}
+
+func consoleURL() string {
+	port := consoleURLPort()
+	return "http://" + *host + ":" + port
+}
+
 func onReady() {
 
 	systray.SetTemplateIcon(icon.Icon, icon.Icon)
@@ -112,6 +187,8 @@ func onReady() {
 	mStopOrig := systray.AddMenuItem("Stop I2P", "Stop the I2P Service")
 	mRestartOrig := systray.AddMenuItem("Restart I2P", "Restart the I2P Service")
 	systray.AddSeparator()
+	mUsabilitySwitch := systray.AddMenuItem(usabilityMode(), "Toggle browser configurations")
+	mConsoleURL := systray.AddMenuItem("Console is available on: "+consoleURL(), "Show console")
 	mBrowseOrig := systray.AddMenuItem("Launch an I2P Browser", "Start an available browser, configured for I2P")
 	subMenuTop := systray.AddMenuItem("I2P Applications", "I2P Applications")
 	smConsole := subMenuTop.AddSubMenuItem("I2P Router Console", "Go to the I2P config page")
@@ -172,35 +249,46 @@ func onReady() {
 			}()
 
 			go func() {
+				<-mUsabilitySwitch.ClickedCh
+				usability = !usability
+				mUsabilitySwitch.SetTitle(usabilityMode())
+			}()
+
+			go func() {
 				<-smConsole.ClickedCh
-				go browse("http://127.0.0.1:7657/console")
+				go browse(consoleURL() + "/console")
+			}()
+
+			go func() {
+				<-mConsoleURL.ClickedCh
+				go browse(consoleURL() + "/console")
 			}()
 
 			go func() {
 				<-smTorrent.ClickedCh
-				go browse("http://127.0.0.1:7657/i2psnark/")
+				go browse(consoleURL() + "/i2psnark/")
 			}()
 
 			go func() {
 				<-smEmail.ClickedCh
-				go browse("http://127.0.0.1:7657/susimail/")
+				go browse(consoleURL() + "/susimail/")
 			}()
 
 			go func() {
 				<-smServices.ClickedCh
-				go browse("http://127.0.0.1:7657/i2ptunnel/")
+				go browse(consoleURL() + "/i2ptunnel/")
 			}()
 
 			go func() {
 				<-smDNS.ClickedCh
-				go browse("http://127.0.0.1:7657/susidns/")
+				go browse(consoleURL() + "/susidns/")
 
 			}()
 
 			go func() {
 				<-mBrowseOrig.ClickedCh
 				log.Println("Launching an I2P Browser")
-				go browse("http://127.0.0.1:7657")
+				go browse(consoleURL())
 			}()
 
 			go func() {

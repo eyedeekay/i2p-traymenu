@@ -9,11 +9,6 @@ WIN_GO_COMPILER_OPTS = -a -tags "netgo windows" -ldflags '-H=windowsgui'
 echo:
 	@echo "type make version to do release $(VERSION)"
 
-readme:
-	grep -v curl README.md | tee README.md.in
-	echo "\`\`\`curl -s https://github.com/eyedeekay/i2p-traymenu/releases/download/v$(VERSION)/install.sh | sh\`\`\`" | tee -a README.md.in
-	cp README.md.in README.md
-
 version:
 	gothub release -p -s $(GITHUB_TOKEN) -u $(USER_GH) -r $(packagename) -t v$(VERSION) -d "version $(VERSION)"
 
@@ -59,33 +54,4 @@ release: version upload
 
 fmt:
 	gofmt -w -s main.go
-
-curlpipe:
-	@echo '#! /usr/bin/env sh' | tee install.sh
-	@echo "#!/bin/sh" | tee -a install.sh
-	@echo 'case "$(uname -s)" in' | tee -a install.sh
-	@echo '' | tee -a install.sh
-	@echo '   Darwin)' | tee -a install.sh
-	@echo "     if [ -f $(packagename) ]; then" | tee -a install.sh
-	@echo "       curl -o $(packagename) https://github.com/eyedeekay/i2p-traymenu/releases/download/v$(VERSION)/i2p-traymenu-darwin" | tee -a install.sh
-	@echo "     fi" | tee -a install.sh
-	@echo '     ;;' | tee -a install.sh
-	@echo '' | tee -a install.sh
-	@echo '   Linux)' | tee -a install.sh
-	@echo "     if [ -f $(packagename) ]; then" | tee -a install.sh
-	@echo "       curl -o $(packagename) https://github.com/eyedeekay/i2p-traymenu/releases/download/v$(VERSION)/i2p-traymenu" | tee -a install.sh
-	@echo "     fi" | tee -a install.sh
-	@echo '     ;;' | tee -a install.sh
-	@echo '' | tee -a install.sh
-	@echo '   *)' | tee -a install.sh
-	@echo '     echo "This system unsupported by curlpipe install"' | tee -a install.sh
-	@echo '     ";;"' | tee -a install.sh
-	@echo 'esac' | tee -a install.sh
-	@echo "sudo chmod a+x $(packagename)" | tee -a install.sh
-	@echo "./$(packagename)" | tee -a install.sh
-
-sumpipe=`sha256sum $(packagename)`
-
-upload-pipe: curlpipe readme
-	gothub upload -R -u eyedeekay -r "$(packagename)" -t v$(VERSION) -l "$(sumpipe)" -n "curlpipe to install" -f "install.sh"
 
