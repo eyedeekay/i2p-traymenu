@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -281,12 +282,23 @@ func onReady() {
 		if err != nil {
 			log.Fatalln("I2P failed to start", err)
 		}
-		if ok {
+		ln, err := net.Listen("tcp", strings.Replace(consoleURL(), "http://", "", 1))
+		if err != nil {
+			log.Println("Console is available on", consoleURL())
+		} else {
+			ln.Close()
+			log.Println("Console is not available on", consoleURL())
+		}
+		if ok && err != nil {
 			mStartOrig.Hide()
 			mBrowseOrig.Show()
+			mConsoleURL.Show()
+			subMenuTop.Show()
 		} else {
 			mStartOrig.Show()
 			mBrowseOrig.Hide()
+			mConsoleURL.Hide()
+			subMenuTop.Hide()
 		}
 	}
 	refreshStart()
@@ -305,6 +317,7 @@ func onReady() {
 					smEmail.Show()
 					smServices.Show()
 					smDNS.Show()
+					mConsoleURL.Show()
 					t := sub
 					sub = !t
 				} else {
@@ -313,6 +326,7 @@ func onReady() {
 					smEmail.Hide()
 					smServices.Hide()
 					smDNS.Hide()
+					mConsoleURL.Hide()
 					t := sub
 					sub = !t
 				}
@@ -387,21 +401,33 @@ func onReady() {
 
 	mWarnOrig.Hide()
 
-	refreshMenu := func() {
+	refreshMenu := func() bool {
 		ok, err := checki2p.CheckI2PIsRunning()
 		if err != nil {
 			mWarnOrig.Show()
+			return false
 		}
 
-		if ok {
-			mWarnOrig.Hide()
-			mStopOrig.Show()
-			mRestartOrig.Show()
-			mBrowseOrig.Show()
+		ln, err := net.Listen("tcp", strings.Replace(consoleURL(), "http://", "", 1))
+		if err != nil {
+			log.Println("Console is available on", consoleURL())
 		} else {
+			ln.Close()
+			log.Println("Console is not available on", consoleURL())
+		}
+		if ok && err != nil {
+			mWarnOrig.Hide()
+			mStartOrig.Hide()
+			mBrowseOrig.Show()
+			mConsoleURL.Show()
+			subMenuTop.Show()
+		} else {
+			mStartOrig.Show()
 			mStopOrig.Hide()
 			mRestartOrig.Hide()
 			mBrowseOrig.Hide()
+			mConsoleURL.Hide()
+			subMenuTop.Hide()
 		}
 
 		i2pcontrol.Initialize(*host, *port, *path)
@@ -410,26 +436,35 @@ func onReady() {
 			mWarnOrig.Show()
 			mStopOrig.Hide()
 			mRestartOrig.Hide()
+			return false
 		}
 		ok, err = checki2pcontrol.CheckI2PControlEcho(*host, *port, *path, "Will it blend?")
 		if err != nil {
 			mWarnOrig.Show()
 			mStopOrig.Hide()
 			mRestartOrig.Hide()
+			return false
 		}
 		if ok {
 			mWarnOrig.Hide()
+			//return false
 		} else {
 			mWarnOrig.Show()
 			mStopOrig.Hide()
 			mRestartOrig.Hide()
+			return false
 		}
+		return true
 	}
 	refreshMenu()
 	go func() {
 		for {
-			refreshMenu()
-			log.Println("i2pcontrol check succeeded, sleeping for a while")
+			if up := refreshMenu(); up {
+				log.Println("i2pcontrol check succeeded, sleeping for a while")
+			} else {
+				log.Println("i2pcontrol check failed, sleeping for a while")
+			}
+
 			time.Sleep(time.Minute)
 		}
 	}()

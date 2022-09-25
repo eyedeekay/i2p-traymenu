@@ -1,4 +1,4 @@
-VERSION=0.1.06
+VERSION=0.1.7
 
 USER_GH=eyedeekay
 packagename=i2p-traymenu
