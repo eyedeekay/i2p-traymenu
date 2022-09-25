@@ -9,6 +9,7 @@ require (
 	github.com/eyedeekay/go-i2pbrowser v0.0.0-20220925222448-9b347a306ece
 	github.com/eyedeekay/go-i2pcontrol v0.0.0-20201227222421-6e9f31a29a91
 	github.com/eyedeekay/toopie.html v0.0.0-20220731225754-04d68bd43b8d
+	github.com/mitchellh/go-ps v1.0.0
 )
 
 require (

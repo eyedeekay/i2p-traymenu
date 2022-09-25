@@ -23,6 +23,7 @@ import (
 	"github.com/eyedeekay/go-i2pcontrol"
 	"github.com/eyedeekay/i2p-traymenu/icon"
 	toopiexec "github.com/eyedeekay/toopie.html/import"
+	"github.com/mitchellh/go-ps"
 
 	"fyne.io/systray"
 )
@@ -184,6 +185,24 @@ func main() {
 		fmt.Printf(usage)
 		flag.PrintDefaults()
 		return
+	}
+	processes, err := ps.Processes()
+	if err != nil {
+		log.Fatal(err)
+	}
+	exe, err := os.Executable()
+	if err != nil {
+		log.Fatal(err)
+	}
+	exe = filepath.Base(exe)
+	for _, process := range processes {
+		//log.Println(process.Executable(), exe)
+		if strings.Contains(process.Executable(), exe) {
+			if process.Pid() != os.Getpid() {
+				log.Println("refusing to start due to PID: ", process.Pid(), process.Executable(), exe)
+				return
+			}
+		}
 	}
 	if *enableJson {
 		enableJsonRPC()
