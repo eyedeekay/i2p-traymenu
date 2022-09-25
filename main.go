@@ -46,9 +46,57 @@ var (
 	routerconf = flag.String("client", routerConfig(), "path to the client.config file for the router console")
 	shelp      = flag.Bool("h", false, "Show the help message")
 	lhelp      = flag.Bool("help", false, "Show the help message")
+	enableJson = flag.Bool("autoenable", true, "automatically enable the jsonrpc webapp(requires a router restart)")
 )
 
 var usability bool
+
+func enableJsonRPC() {
+	jsonconf := jsonConfig()
+	if jsonconf != "" {
+		log.Println("Ensuring jsonrpc.startOnLoad=true in", jsonconf)
+		info, err := os.Stat(jsonconf)
+		if err != nil {
+			panic(err)
+		}
+		contents, err := ioutil.ReadFile(jsonconf)
+		if err != nil {
+			panic(err)
+		}
+		switched := strings.Replace(string(contents), "webapps.jsonrpc.startOnLoad=false", "webapps.jsonrpc.startOnLoad=true", 1)
+		err = ioutil.WriteFile(jsonconf, []byte(switched), info.Mode())
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func jsonConfig() string {
+	switch runtime.GOOS {
+	case "windows":
+		dir := filepath.Join(os.Getenv("LOCALAPPDATA"), "i2p")
+		conf := filepath.Join(dir, "webapps.config")
+		if _, err := os.Stat(conf); err == nil {
+			return conf
+		}
+	case "linux":
+		userHomeDir, err := os.UserHomeDir()
+		if err != nil {
+			panic(err)
+		}
+		dir := filepath.Join(userHomeDir, ".i2p")
+		conf := filepath.Join(dir, "webapps.config")
+		if _, err := os.Stat(conf); err == nil {
+			return conf
+		}
+		dir = filepath.Join(userHomeDir, "i2p")
+		conf = filepath.Join(dir, "webapps.config")
+		if _, err := os.Stat(conf); err == nil {
+			return conf
+		}
+	}
+	return ""
+}
 
 func routerConfig() string {
 	switch runtime.GOOS {
@@ -136,6 +184,9 @@ func main() {
 		fmt.Printf(usage)
 		flag.PrintDefaults()
 		return
+	}
+	if *enableJson {
+		enableJsonRPC()
 	}
 	onExit := func() {
 		log.Println("Exiting now.")
