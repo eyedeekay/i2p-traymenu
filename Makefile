@@ -3,7 +3,7 @@ VERSION=0.1.05
 USER_GH=eyedeekay
 packagename=i2p-traymenu
 
-GO_COMPILER_OPTS = -a -tags "netgo" -ldflags '-w'
+GO_COMPILER_OPTS = -a -tags "netgo" -ldflags '-w -extldflags=-static'
 WIN_GO_COMPILER_OPTS = -a -tags "netgo windows" -ldflags '-H=windowsgui'
 
 echo:
@@ -58,7 +58,7 @@ upload: upload-windows upload-darwin upload-linux
 release: version upload
 
 fmt:
-	gofmt -w -s main.go irc/*.go
+	gofmt -w -s main.go
 
 curlpipe:
 	@echo '#! /usr/bin/env sh' | tee install.sh

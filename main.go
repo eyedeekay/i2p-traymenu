@@ -3,27 +3,26 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net"
+	"os"
+	"path/filepath"
+	"strings"
+
 	//"io/ioutil"
 	"log"
-	"os"
+
 	//"strings"
-	"path/filepath"
+
 	"time"
 
-	"github.com/eyedeekay/checki2cp"
-	"github.com/eyedeekay/checki2cp/controlcheck"
-	"github.com/eyedeekay/di2prc/lib"
+	checki2p "github.com/eyedeekay/checki2cp"
+	checki2pcontrol "github.com/eyedeekay/checki2cp/controlcheck"
+	fcw "github.com/eyedeekay/go-fpw"
+	goi2pbrowser "github.com/eyedeekay/go-i2pbrowser"
 	"github.com/eyedeekay/go-i2pcontrol"
 	"github.com/eyedeekay/i2p-traymenu/icon"
-	"github.com/eyedeekay/i2p-traymenu/irc"
-	"github.com/eyedeekay/i2pbrowser/import"
+	toopiexec "github.com/eyedeekay/toopie.html/import"
 
-	Core "github.com/eyedeekay/opentracker"
-	"github.com/eyedeekay/sam3/i2pkeys"
-	"github.com/eyedeekay/toopie.html/import"
-	"github.com/getlantern/systray"
-	"github.com/vvampirius/retracker/core/common"
+	"fyne.io/systray"
 )
 
 var usage = `i2p-traymenu
@@ -36,26 +35,58 @@ tray i2pcontrol client. Also has an embedded IRC client.
 
 //        -block default:false
 
-var home, _ = os.UserHomeDir()
-
 var (
 	host     = flag.String("host", "localhost", "Host of the i2pcontrol and SAM interfaces")
 	port     = flag.String("port", "7657", "Port of the i2pcontrol interface")
-	dir      = flag.String("dir", filepath.Join(home, "i2p/opt/native-traymenu"), "Path to the configuration directory")
+	dir      = flag.String("dir", defaultDir(), "Path to the configuration directory")
 	path     = flag.String("path", "jsonrpc", "Path to the i2pcontrol interface")
 	password = flag.String("password", "itoopie", "Password for the i2pcontrol interface")
 	shelp    = flag.Bool("h", false, "Show the help message")
 	lhelp    = flag.Bool("help", false, "Show the help message")
-	debug    = flag.Bool("d", false, "Debug mode")
-	ot       = flag.Bool("tracker", false, "Run an open torrent tracker")
-	chat     = flag.Bool("irc", true, "Run an IRC client connected to I2P")
-	age      = flag.Float64("a", 1800, "Keep 'n' minutes peer in memory")
-	sam      = flag.String("sam", "7656", "Port of the SAMv3 interface, host must match i2pcontrol")
-
-//	block    = flag.Bool("block", false, "Block the terminal until the router is completely shut down")
 )
 
-var di2prcln net.Listener
+func defaultDir() string {
+	exe, err := os.Executable()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if strings.Contains(exe, "plugins/i2p-traymenu") {
+		return filepath.Dir(exe)
+	}
+	// if the path to me is the I2P plugin directory, then use the plugin directory as the default directory
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	// if the working directory is the home directory, then use a default directory inside the I2P directory
+	home, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if home == wd {
+		return filepath.Join(home, ".i2p/plugins/i2p-traymenu")
+	}
+	return wd
+}
+
+func profileDir() string {
+	return filepath.Join(*dir, "i2p.profile.firefox")
+}
+
+func browse(url string) {
+	profilePath, err := goi2pbrowser.UnpackBase(profileDir())
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	FIREFOX, ERROR := fcw.BasicFirefox(profilePath, false, url)
+	if ERROR != nil {
+		log.Println(ERROR)
+		return
+	}
+	defer FIREFOX.Close()
+	<-FIREFOX.Done()
+}
 
 func main() {
 	flag.Parse()
@@ -64,38 +95,11 @@ func main() {
 		flag.PrintDefaults()
 		return
 	}
-	if *chat {
-		go trayirc.IRC(*dir)
-		go trayirc.IRCServerMain(false, *debug, *dir, "ircd.yml")
-		defer trayirc.Close(*dir, "ircd.yml")
-	}
-	if *ot {
-		go tracker()
-	}
-	di2prcln = di2prc.Listen(*host+":"+*sam, "", "")
 	onExit := func() {
-		defer di2prcln.Close()
 		log.Println("Exiting now.")
 	}
 
 	systray.Run(onReady, onExit)
-}
-
-func tracker() {
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
-		flag.PrintDefaults()
-	}
-
-	flag.Parse()
-
-	config := common.Config{
-		Listen:  "127.0.0.1:80",
-		Debug:   *debug,
-		Age:     *age,
-		XRealIP: false,
-	}
-	Core.New(&config)
 }
 
 func onReady() {
@@ -115,9 +119,6 @@ func onReady() {
 	smEmail := subMenuTop.AddSubMenuItem("Mail", "Send and Recieve email")
 	smServices := subMenuTop.AddSubMenuItem("Hidden Services Mangager", "Set up and tear down tunnels")
 	smDNS := subMenuTop.AddSubMenuItem("Address Book", "Store contact addresses")
-	mIRC := subMenuTop.AddSubMenuItem("IRC Chat", "Talk to others on I2P IRC")
-	mSelfIRC := subMenuTop.AddSubMenuItem("Group Chat", "Connect to private IRC server")
-	mChatOrig := systray.AddMenuItem("Distributed Chat", "(Experimental) Distributed group-chat")
 	mStatOrig := systray.AddMenuItem("I2P Router Stats", "View I2P Router Console Statistics")
 	systray.AddSeparator()
 	mQuitOrig := systray.AddMenuItem("Close Tray", "Close the tray app, but don't shutdown the router")
@@ -128,15 +129,10 @@ func onReady() {
 		<-mQuitOrig.ClickedCh
 		systray.Quit()
 	}()
-	smConsole.Hide()
-	smTorrent.Hide()
-	smEmail.Hide()
-	smServices.Hide()
-	smDNS.Hide()
-	mChatOrig.Hide()
 	refreshStart := func() {
 		ok, err := checki2p.CheckI2PIsRunning()
 		if err != nil {
+			log.Fatalln("I2P failed to start", err)
 		}
 		if ok {
 			mStartOrig.Hide()
@@ -177,55 +173,40 @@ func onReady() {
 
 			go func() {
 				<-smConsole.ClickedCh
-				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", "http://127.0.0.1:7657/console"})
+				go browse("http://127.0.0.1:7657/console")
 			}()
 
 			go func() {
 				<-smTorrent.ClickedCh
-				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", "http://127.0.0.1:7657/i2psnark/"})
+				go browse("http://127.0.0.1:7657/i2psnark/")
 			}()
 
 			go func() {
 				<-smEmail.ClickedCh
-				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", "http://127.0.0.1:7657/susimail/"})
+				go browse("http://127.0.0.1:7657/susimail/")
 			}()
 
 			go func() {
 				<-smServices.ClickedCh
-				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", "http://127.0.0.1:7657/i2ptunnel/"})
+				go browse("http://127.0.0.1:7657/i2ptunnel/")
 			}()
 
 			go func() {
 				<-smDNS.ClickedCh
-				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", "http://127.0.0.1:7657/susidns/"})
-			}()
+				go browse("http://127.0.0.1:7657/susidns/")
 
-			go func() {
-				<-mIRC.ClickedCh
-				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", "http://127.0.0.1:7669/connect"})
-			}()
-
-			go func() {
-				<-mSelfIRC.ClickedCh
-				go i2pbrowser.MainNoEmbeddedStuff([]string{"--app", trayirc.OutputAutoLink(*dir, "iirc")})
 			}()
 
 			go func() {
 				<-mBrowseOrig.ClickedCh
 				log.Println("Launching an I2P Browser")
-				go i2pbrowser.MainNoEmbeddedStuff(nil)
+				go browse("http://127.0.0.1:7657")
 			}()
 
 			go func() {
 				<-mStatOrig.ClickedCh
 				log.Println("Launching toopie.html")
 				go toopiexec.Run()
-			}()
-
-			go func() {
-				<-mChatOrig.ClickedCh
-				log.Println("Launching di2prc")
-				go i2pbrowser.MainNoEmbeddedStuff([]string{"about:blank", "http://" + di2prcln.Addr().(i2pkeys.I2PAddr).Base32()})
 			}()
 
 			go func() {
@@ -251,10 +232,11 @@ func onReady() {
 	refreshMenu := func() {
 		ok, err := checki2p.CheckI2PIsRunning()
 		if err != nil {
-			//mWarnOrig.Show()
+			mWarnOrig.Show()
 		}
 
 		if ok {
+			mWarnOrig.Hide()
 			mStopOrig.Show()
 			mRestartOrig.Show()
 			mBrowseOrig.Show()
