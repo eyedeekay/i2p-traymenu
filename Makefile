@@ -1,4 +1,4 @@
-VERSION=0.1.05
+VERSION=0.1.06
 
 USER_GH=eyedeekay
 packagename=i2p-traymenu
@@ -26,7 +26,6 @@ all: windows osx linux
 
 windows: fmt
 	CC=x86_64-w64-mingw32-gcc-win32 CGO_ENABLED=1 GOOS=windows go build $(WIN_GO_COMPILER_OPTS) -o $(packagename).exe
-	#CC=i686-w64-mingw32-gcc-win32 CGO_ENABLED=1 GOOS=windows GOARCG=i386 go build $(WIN_GO_COMPILER_OPTS) -o $(packagename)-32.exe
 
 osx: fmt
 	#GOARCH=386 GOOS=darwin go build $(GO_COMPILER_OPTS) -o $(packagename)-darwin-386
