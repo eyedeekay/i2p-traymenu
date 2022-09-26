@@ -30,7 +30,7 @@ windows: fmt
 
 osx: fmt
 	#GOARCH=386 GOOS=darwin go build $(GO_COMPILER_OPTS) -o $(packagename)-darwin-386
-	GOOS=darwin go build $(GO_COMPILER_OPTS) -o $(packagename)-darwin
+	#GOOS=darwin go build $(GO_COMPILER_OPTS) -o $(packagename)-darwin
 
 linux: fmt
 	GOOS=linux go build $(GO_COMPILER_OPTS) -o $(packagename)
