@@ -270,8 +270,32 @@ func onReady() {
 	mStatOrig := systray.AddMenuItem("I2P Router Stats", "View I2P Router Console Statistics")
 	systray.AddSeparator()
 	mQuitOrig := systray.AddMenuItem("Close Tray", "Close the tray app, but don't shutdown the router")
-	mWarnOrig := systray.AddMenuItem("I2P is Running but I2PControl is Not available.\nEnable jsonrpc on your I2P router.", "Warn the user if functionality is limited.")
-	sub := true
+	// mWarnOrig := systray.AddMenuItem("I2P is Running but I2PControl is Not available.\nEnable jsonrpc on your I2P router.", "Warn the user if functionality is limited.")
+	//sub := true
+	var showSubmenuItems = func() {
+		mUsabilitySwitch.Show()
+		mConsoleURL.Show()
+		mBrowseOrig.Show()
+		subMenuTop.Show()
+		smConsole.Show()
+		smTorrent.Show()
+		smEmail.Show()
+		smServices.Show()
+		smDNS.Show()
+		mStatOrig.Show()
+	}
+	var hideSubmenuItems = func() {
+		mUsabilitySwitch.Hide()
+		mConsoleURL.Hide()
+		mBrowseOrig.Hide()
+		subMenuTop.Hide()
+		smConsole.Hide()
+		smTorrent.Hide()
+		smEmail.Hide()
+		smServices.Hide()
+		smDNS.Hide()
+		mStatOrig.Hide()
+	}
 
 	go func() {
 		<-mQuitOrig.ClickedCh
@@ -291,26 +315,10 @@ func onReady() {
 		}
 		if ok && err != nil {
 			mStartOrig.Hide()
-			mBrowseOrig.Show()
-			mConsoleURL.Show()
-			subMenuTop.Show()
-			smConsole.Show()
-			smTorrent.Show()
-			smEmail.Show()
-			smServices.Show()
-			smDNS.Show()
-			mConsoleURL.Show()
+			showSubmenuItems()
 		} else {
 			mStartOrig.Show()
-			mBrowseOrig.Hide()
-			mConsoleURL.Hide()
-			subMenuTop.Hide()
-			smConsole.Hide()
-			smTorrent.Hide()
-			smEmail.Hide()
-			smServices.Hide()
-			smDNS.Hide()
-			mConsoleURL.Hide()
+			hideSubmenuItems()
 		}
 	}
 	refreshStart()
@@ -323,38 +331,7 @@ func onReady() {
 
 			go func() {
 				<-subMenuTop.ClickedCh
-				if sub {
-					smConsole.Show()
-					smTorrent.Show()
-					smEmail.Show()
-					smServices.Show()
-					smDNS.Show()
-					mConsoleURL.Show()
-					smConsole.Show()
-					smTorrent.Show()
-					smEmail.Show()
-					smServices.Show()
-					smDNS.Show()
-					mConsoleURL.Show()
-					t := sub
-					sub = !t
-				} else {
-					smConsole.Hide()
-					smTorrent.Hide()
-					smEmail.Hide()
-					smServices.Hide()
-					smDNS.Hide()
-					mConsoleURL.Hide()
-					subMenuTop.Hide()
-					smConsole.Hide()
-					smTorrent.Hide()
-					smEmail.Hide()
-					smServices.Hide()
-					smDNS.Hide()
-					mConsoleURL.Hide()
-					t := sub
-					sub = !t
-				}
+				showSubmenuItems()
 			}()
 
 			go func() {
@@ -397,7 +374,7 @@ func onReady() {
 			go func() {
 				<-mBrowseOrig.ClickedCh
 				log.Println("Launching an I2P Browser")
-				go browse(consoleURL())
+				go browse("about:home")
 			}()
 
 			go func() {
@@ -424,12 +401,12 @@ func onReady() {
 		}
 	}()
 
-	mWarnOrig.Hide()
+	// mWarnOrig.Hide()
 
 	refreshMenu := func() bool {
 		ok, err := checki2p.CheckI2PIsRunning()
 		if err != nil {
-			mWarnOrig.Show()
+			// mWarnOrig.Show()
 			return false
 		}
 
@@ -441,52 +418,38 @@ func onReady() {
 			log.Println("Console is not available on", consoleURL())
 		}
 		if ok && err != nil {
-			mWarnOrig.Hide()
+			log.Println("refreshMenu top")
+			//// mWarnOrig.Hide()
 			mStartOrig.Hide()
-			mBrowseOrig.Show()
-			mConsoleURL.Show()
-			subMenuTop.Show()
-			smConsole.Show()
-			smTorrent.Show()
-			smEmail.Show()
-			smServices.Show()
-			smDNS.Show()
-			mConsoleURL.Show()
+			showSubmenuItems()
 		} else {
+			log.Println("refreshMenu bottom")
 			mStartOrig.Show()
 			mStopOrig.Hide()
 			mRestartOrig.Hide()
-			mBrowseOrig.Hide()
-			mConsoleURL.Hide()
-			subMenuTop.Hide()
-			smConsole.Hide()
-			smTorrent.Hide()
-			smEmail.Hide()
-			smServices.Hide()
-			smDNS.Hide()
-			mConsoleURL.Hide()
+			hideSubmenuItems()
 		}
 
 		i2pcontrol.Initialize(*host, *port, *path)
 		_, err = i2pcontrol.Authenticate(*password)
 		if err != nil {
-			mWarnOrig.Show()
+			// mWarnOrig.Show()
 			mStopOrig.Hide()
 			mRestartOrig.Hide()
 			return false
 		}
 		ok, err = checki2pcontrol.CheckI2PControlEcho(*host, *port, *path, "Will it blend?")
 		if err != nil {
-			mWarnOrig.Show()
+			// mWarnOrig.Show()
 			mStopOrig.Hide()
 			mRestartOrig.Hide()
 			return false
 		}
 		if ok {
-			mWarnOrig.Hide()
+			// mWarnOrig.Hide()
 			//return false
 		} else {
-			mWarnOrig.Show()
+			// mWarnOrig.Show()
 			mStopOrig.Hide()
 			mRestartOrig.Hide()
 			return false
@@ -502,7 +465,7 @@ func onReady() {
 				log.Println("i2pcontrol check failed, sleeping for a while")
 			}
 
-			time.Sleep(time.Minute)
+			time.Sleep(time.Second * 10)
 		}
 	}()
 }
