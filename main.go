@@ -19,7 +19,6 @@ import (
 
 	checki2p "github.com/eyedeekay/checki2cp"
 	checki2pcontrol "github.com/eyedeekay/checki2cp/controlcheck"
-	fcw "github.com/eyedeekay/go-fpw"
 	goi2pbrowser "github.com/eyedeekay/go-i2pbrowser"
 	"github.com/eyedeekay/go-i2pcontrol"
 	"github.com/eyedeekay/i2p-traymenu/icon"
@@ -155,29 +154,35 @@ func profileDir() string {
 	return filepath.Join(*dir, "i2p.profile.firefox")
 }
 
-func browse(url string) {
-	var profilePath string
-	var err error
+func browse(url string, app bool) {
+	//var profilePath string
+	//var err error
 	if usability {
-		profilePath, err = goi2pbrowser.UnpackUsability(profileDir())
-		if err != nil {
-			log.Println(err)
-			return
-		}
+		goi2pbrowser.BrowseUsability(profileDir(), url)
+	} else if app {
+		goi2pbrowser.BrowseApp(profileDir(), url)
 	} else {
-		profilePath, err = goi2pbrowser.UnpackBase(profileDir())
-		if err != nil {
-			log.Println(err)
+		goi2pbrowser.BrowseStrict(profileDir(), url)
+	}
+	/*switch app {
+	case true:
+		FIREFOX, ERROR := fcw.BasicFirefox(profilePath, false, url)
+		if ERROR != nil {
+			log.Println(ERROR)
 			return
 		}
-	}
-	FIREFOX, ERROR := fcw.BasicFirefox(profilePath, false, url)
-	if ERROR != nil {
-		log.Println(ERROR)
-		return
-	}
-	defer FIREFOX.Close()
-	<-FIREFOX.Done()
+		defer FIREFOX.Close()
+		<-FIREFOX.Done()
+	default:
+		FIREFOX, ERROR := fcw.BasicFirefox(profilePath, false, url)
+		if ERROR != nil {
+			log.Println(ERROR)
+			return
+		}
+		defer FIREFOX.Close()
+		<-FIREFOX.Done()
+	}*/
+
 }
 
 func main() {
@@ -342,39 +347,39 @@ func onReady() {
 
 			go func() {
 				<-smConsole.ClickedCh
-				go browse(consoleURL() + "/console")
+				go browse(consoleURL()+"/console", true)
 			}()
 
 			go func() {
 				<-mConsoleURL.ClickedCh
-				go browse(consoleURL() + "/console")
+				go browse(consoleURL()+"/console", true)
 			}()
 
 			go func() {
 				<-smTorrent.ClickedCh
-				go browse(consoleURL() + "/i2psnark/")
+				go browse(consoleURL()+"/i2psnark/", true)
 			}()
 
 			go func() {
 				<-smEmail.ClickedCh
-				go browse(consoleURL() + "/susimail/")
+				go browse(consoleURL()+"/susimail/", true)
 			}()
 
 			go func() {
 				<-smServices.ClickedCh
-				go browse(consoleURL() + "/i2ptunnel/")
+				go browse(consoleURL()+"/i2ptunnel/", true)
 			}()
 
 			go func() {
 				<-smDNS.ClickedCh
-				go browse(consoleURL() + "/susidns/")
+				go browse(consoleURL()+"/susidns/", true)
 
 			}()
 
 			go func() {
 				<-mBrowseOrig.ClickedCh
 				log.Println("Launching an I2P Browser")
-				go browse("about:home")
+				go browse("about:home", false)
 			}()
 
 			go func() {

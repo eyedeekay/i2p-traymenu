@@ -5,8 +5,8 @@ go 1.19
 require (
 	fyne.io/systray v1.10.0
 	github.com/eyedeekay/checki2cp v0.0.21
-	github.com/eyedeekay/go-fpw v0.0.0-20200512022837-c8b4dcdc74d4
-	github.com/eyedeekay/go-i2pbrowser v0.0.0-20220925222448-9b347a306ece
+	github.com/eyedeekay/go-fpw v0.0.0-20221020035017-28fb80249c64
+	github.com/eyedeekay/go-i2pbrowser v0.0.0-20221020035612-51eac0c07201
 	github.com/eyedeekay/go-i2pcontrol v0.0.0-20201227222421-6e9f31a29a91
 	github.com/eyedeekay/toopie.html v0.0.0-20220731225754-04d68bd43b8d
 	github.com/mitchellh/go-ps v1.0.0
