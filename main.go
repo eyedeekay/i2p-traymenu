@@ -155,8 +155,6 @@ func profileDir() string {
 }
 
 func browse(url string, app bool) {
-	//var profilePath string
-	//var err error
 	if usability {
 		goi2pbrowser.BrowseUsability(profileDir(), url)
 	} else if app {
@@ -164,25 +162,6 @@ func browse(url string, app bool) {
 	} else {
 		goi2pbrowser.BrowseStrict(profileDir(), url)
 	}
-	/*switch app {
-	case true:
-		FIREFOX, ERROR := fcw.BasicFirefox(profilePath, false, url)
-		if ERROR != nil {
-			log.Println(ERROR)
-			return
-		}
-		defer FIREFOX.Close()
-		<-FIREFOX.Done()
-	default:
-		FIREFOX, ERROR := fcw.BasicFirefox(profilePath, false, url)
-		if ERROR != nil {
-			log.Println(ERROR)
-			return
-		}
-		defer FIREFOX.Close()
-		<-FIREFOX.Done()
-	}*/
-
 }
 
 func main() {
